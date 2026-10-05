@@ -129,6 +129,24 @@ jobs:
           method: network
           sub-packages: '["nvcc", "crt", "nvvm", "thrust", "cudart", "cublas", "cublas_dev", "visual_studio_integration"]'
           log-file-suffix: windows-cuda.txt
+      - name: Check CUDA runtime DLL loading before compiling kernels
+        if: matrix.backend == 'cuda'
+        shell: pwsh
+        run: ./windows/cuda_runtime.ps1 -Check
+      - name: Identify CUDA binary cache
+        if: matrix.backend == 'cuda'
+        id: cuda_inputs
+        shell: pwsh
+        run: |
+          "engine=$(git rev-parse HEAD:llama.cpp)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "image=$env:ImageVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Restore compiled CUDA executables
+        if: matrix.backend == 'cuda'
+        id: cuda_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: llama.cpp/build-win-ci/bin/Release
+          key: cuda-windows-${{ steps.cuda_inputs.outputs.image }}-13.2-75-86-89-${{ steps.cuda_inputs.outputs.engine }}-${{ hashFiles('windows/build.ps1', 'windows/apply_windows_port.py', 'windows/socket-compat.h') }}
       - name: Install Vulkan SDK
         if: matrix.backend == 'vulkan'
         uses: jakoch/install-vulkan-sdk-action@3c53c378c9bfbb2ea122a1cc164a837d4004c871 # v1.5.2
@@ -137,13 +155,21 @@ jobs:
           install_runtime: false
           stripdown: true
       - name: Build GPU host
+        id: build
+        if: matrix.backend != 'cuda' || steps.cuda_cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: ./windows/build.ps1 -Backend ${{ matrix.backend }} -BuildDir llama.cpp/build-win-ci -CudaArchitectures '75;86;89' -Parallel 2
+      - name: Save compiled CUDA executables before runtime checks
+        if: matrix.backend == 'cuda' && steps.cuda_cache.outputs.cache-hit != 'true' && steps.build.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: llama.cpp/build-win-ci/bin/Release
+          key: ${{ steps.cuda_cache.outputs.cache-primary-key }}
       - name: Smoke test GPU executable loading
         shell: pwsh
         run: |
           ./llama.cpp/build-win-ci/bin/Release/llama-server.exe --version
-          if ($LASTEXITCODE -ne 0) { throw 'GPU host executable did not start' }
+          if ($LASTEXITCODE -ne 0) { throw ('GPU host executable did not start (exit 0x{0:X8})' -f [int]$LASTEXITCODE) }
       - name: Package Windows host
         shell: pwsh
         run: ./windows/package.ps1 -BuildDir llama.cpp/build-win-ci -Backend ${{ matrix.backend }}

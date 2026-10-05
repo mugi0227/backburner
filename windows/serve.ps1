@@ -5,6 +5,7 @@ param(
     [string]$BuildDir = 'llama.cpp/build-windows'
 )
 $ErrorActionPreference = 'Stop'
+. "$PSScriptRoot/cuda_runtime.ps1"
 
 if (-not (Test-Path $Model)) { throw "Model not found: $Model" }
 

@@ -18,7 +18,11 @@ $cmake = @('-S','llama.cpp','-B',$BuildDir,'-DCMAKE_BUILD_TYPE=Release','-DBUILD
     '-DGGML_CUDA=OFF','-DGGML_VULKAN=OFF','-DLLAMA_OPENSSL=OFF',
     '-DLLAMA_BUILD_TESTS=OFF','-DLLAMA_BUILD_EXAMPLES=OFF','-DLLAMA_BUILD_APP=OFF')
 switch ($Backend) {
-    'cuda'   { $cmake += '-DGGML_CUDA=ON' }
+    'cuda'   {
+        $cmake += '-DGGML_CUDA=ON'
+        # Keep --version/help usable without a GPU driver; VMM loads it on demand.
+        $cmake += '-DCMAKE_EXE_LINKER_FLAGS=/DELAYLOAD:nvcuda.dll delayimp.lib'
+    }
     'vulkan' { $cmake += '-DGGML_VULKAN=ON' }
     'cpu'    { $cmake += '-DGGML_NATIVE=OFF' }
 }

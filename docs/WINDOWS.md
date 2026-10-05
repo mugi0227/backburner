@@ -187,9 +187,19 @@ The CUDA artifact targets compute capabilities 7.5, 8.6 and 8.9; other GPUs may
 need a local build with `-CudaArchitectures` set for that GPU.
 
 CUDA packages also need the CUDA 13.2 Toolkit runtime libraries on `PATH`
-(install the toolkit from NVIDIA); Vulkan packages need the Vulkan loader from
+(install the toolkit from NVIDIA). `serve.ps1` adds the installed toolkit's
+`bin` and `bin/x64` directories to its process search path via `CUDA_PATH`;
+for direct executable use, run `windows/cuda_runtime.ps1` in the same PowerShell
+session first. The NVIDIA GPU driver is still required for CUDA inference.
+Vulkan packages need the Vulkan loader from
 the GPU driver. The Visual C++ redistributable listed above is required for all
 CI packages. GPU CI checks executable loading, but does not run GPU inference.
+
+CUDA CI first checks DLL loading with a small host executable, before compiling
+the kernels. The driver DLL is delay-loaded so `--version` works on a runner
+without a GPU. Compilation can exceed an hour; the GPU jobs allow 120 minutes.
+Compiled CUDA executables are cached for reruns with the same build inputs,
+and the final executable loading check still runs on a cache hit.
 
 Extract a package, install `windows/requirements.txt`, and follow steps 3-6.
 For a local build, `windows/package.ps1 -Backend cpu` creates the same ZIP layout.
