@@ -63,7 +63,9 @@ class TunnelLoopbackTests(unittest.TestCase):
                 while len(answer) < len(payload):
                     try:
                         chunk = conn.recv(65536)
-                    except ConnectionResetError:
+                    except (ConnectionResetError, ConnectionAbortedError):
+                        if not bad_key:
+                            raise
                         break
                     if not chunk:
                         break
