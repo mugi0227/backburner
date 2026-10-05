@@ -1,5 +1,10 @@
 # Backburner
 
+> **Unofficial Windows MVP:** native Windows host helpers and CI are in this fork.
+> Start with [README-WINDOWS.md](README-WINDOWS.md) and [docs/WINDOWS.md](docs/WINDOWS.md).
+> Windows + iPhone inference and performance are not yet tested on real devices.
+> The original Mac project and its measurements follow below: [StayLameBro/backburner](https://github.com/StayLameBro/backburner).
+
 Plug your iPhone into your MacBook with a 10 Gb/s USB-C cable and it helps run Qwen3.8-27B locally:
 
 - **Faster prefill (up to 64k context).** For every batch of prompt tokens the Mac runs layers 1-40 and the iPhone runs 41-64

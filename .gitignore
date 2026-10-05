@@ -11,3 +11,7 @@ xcuserdata/
 bench/results/slots/
 *.bin
 *.bin.dft
+dist/
+*.pyc
+wifi.key
+wifi.json
