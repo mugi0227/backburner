@@ -15,13 +15,16 @@ if (-not (Test-Path 'llama.cpp/CMakeLists.txt')) {
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $cmake = @('-S','llama.cpp','-B',$BuildDir,'-DCMAKE_BUILD_TYPE=Release','-DBUILD_SHARED_LIBS=OFF',
+    '-DGGML_STATIC=OFF','-DCMAKE_EXE_LINKER_FLAGS=',
+    '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>DLL',
     '-DGGML_CUDA=OFF','-DGGML_VULKAN=OFF','-DLLAMA_OPENSSL=OFF',
     '-DLLAMA_BUILD_TESTS=OFF','-DLLAMA_BUILD_EXAMPLES=OFF','-DLLAMA_BUILD_APP=OFF')
 switch ($Backend) {
     'cuda'   {
         $cmake += '-DGGML_CUDA=ON'
-        # Keep --version/help usable without a GPU driver; VMM loads it on demand.
-        $cmake += '-DCMAKE_EXE_LINKER_FLAGS=/DELAYLOAD:nvcuda.dll delayimp.lib'
+        # CUDA 13.2's shared runtime fails on the driverless CI runner.
+        $cmake += '-DGGML_STATIC=ON'
+        $cmake += '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>'
     }
     'vulkan' { $cmake += '-DGGML_VULKAN=ON' }
     'cpu'    { $cmake += '-DGGML_NATIVE=OFF' }

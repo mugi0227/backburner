@@ -19,7 +19,7 @@ foreach ($CudaRuntimePath in $CudaRuntimePaths) {
 }
 if (-not $Check) { return }
 
-# Verify the same import libraries and delayed driver loading before the long
+# Verify the same runtime and import libraries before the long
 # CUDA kernel build. No device or model is needed for this loader check.
 $CudaProbeDir = Join-Path ([IO.Path]::GetTempPath()) ('backburner-cuda-probe-' + [guid]::NewGuid())
 New-Item -ItemType Directory $CudaProbeDir | Out-Null
@@ -28,8 +28,8 @@ cmake_minimum_required(VERSION 3.18)
 project(backburner_cuda_runtime_check LANGUAGES CXX)
 find_package(CUDAToolkit REQUIRED)
 add_executable(cuda-runtime-check main.cpp)
-target_link_libraries(cuda-runtime-check PRIVATE CUDA::cudart CUDA::cublas CUDA::cuda_driver delayimp)
-target_link_options(cuda-runtime-check PRIVATE /DELAYLOAD:nvcuda.dll)
+set_property(TARGET cuda-runtime-check PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+target_link_libraries(cuda-runtime-check PRIVATE CUDA::cudart_static CUDA::cublas CUDA::cuda_driver)
 '@ | Set-Content -Path "$CudaProbeDir/CMakeLists.txt" -Encoding utf8
 @'
 #include <cstdio>
@@ -37,6 +37,8 @@ target_link_options(cuda-runtime-check PRIVATE /DELAYLOAD:nvcuda.dll)
 #include <cublas_v2.h>
 #include <cuda.h>
 int main(int argc, char **) {
+    std::puts("CUDA loader reached main");
+    std::fflush(stdout);
     // Retain the driver and cuBLAS imports without invoking GPU operations.
     if (argc > 1) {
         int version = 0;
