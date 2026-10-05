@@ -127,7 +127,7 @@ jobs:
         with:
           cuda: '13.2.0'
           method: network
-          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "visual_studio_integration"]'
+          sub-packages: '["nvcc", "crt", "nvvm", "thrust", "cudart", "cublas", "cublas_dev", "visual_studio_integration"]'
           log-file-suffix: windows-cuda.txt
       - name: Install Vulkan SDK
         if: matrix.backend == 'vulkan'
@@ -139,6 +139,11 @@ jobs:
       - name: Build GPU host
         shell: pwsh
         run: ./windows/build.ps1 -Backend ${{ matrix.backend }} -BuildDir llama.cpp/build-win-ci -CudaArchitectures '75;86;89' -Parallel 2
+      - name: Smoke test GPU executable loading
+        shell: pwsh
+        run: |
+          ./llama.cpp/build-win-ci/bin/Release/llama-server.exe --version
+          if ($LASTEXITCODE -ne 0) { throw 'GPU host executable did not start' }
       - name: Package Windows host
         shell: pwsh
         run: ./windows/package.ps1 -BuildDir llama.cpp/build-win-ci -Backend ${{ matrix.backend }}

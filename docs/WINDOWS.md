@@ -41,6 +41,8 @@ Install:
 Then:
 
 ```powershell
+git clone --recurse-submodules https://github.com/mugi0227/backburner.git
+cd backburner
 py -m pip install -r windows/requirements.txt
 pymobiledevice3 usbmux list
 ```
@@ -183,6 +185,11 @@ For CUDA/Vulkan compile jobs, use **Actions -> Windows MVP -> Run workflow** and
 enable `gpu`. These jobs check compilation, not GPU execution or iPhone speed.
 The CUDA artifact targets compute capabilities 7.5, 8.6 and 8.9; other GPUs may
 need a local build with `-CudaArchitectures` set for that GPU.
+
+CUDA packages also need the CUDA 13.2 Toolkit runtime libraries on `PATH`
+(install the toolkit from NVIDIA); Vulkan packages need the Vulkan loader from
+the GPU driver. The Visual C++ redistributable listed above is required for all
+CI packages. GPU CI checks executable loading, but does not run GPU inference.
 
 Extract a package, install `windows/requirements.txt`, and follow steps 3-6.
 For a local build, `windows/package.ps1 -Backend cpu` creates the same ZIP layout.
